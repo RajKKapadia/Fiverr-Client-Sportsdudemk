@@ -87,7 +87,7 @@ webApp.post('/contact-replied', async (req, res) => {
 
     await GS.addContactRepliedRow(row);
 
-    telegramBot.sendMessage(SENDER_ID, `A contact ${name}, has replied to the campaign ${campaign} with a message ${message}.`);
+    telegramBot.sendMessage(SENDER_ID, `A contact ${name}, has replied to the campaign ${campaign} on profile ${profile_link} has sent a message.`);
     
     res.sendStatus(200);
 });

@@ -40,6 +40,11 @@ webApp.post('/webhook', async (req, res) => {
     });
 });
 
+const TelegramBot = require('node-telegram-bot-api');
+const TELEGRAMTOKEN = process.env.TELEGRAM_API_KEY;
+const telegramBot = new TelegramBot(TELEGRAMTOKEN, { polling: true });
+const SENDER_ID = process.env.SENDER_ID;
+
 webApp.post('/contact-replied', async (req, res) => {
 
     let messenger = req.body.messenger;
@@ -81,6 +86,8 @@ webApp.post('/contact-replied', async (req, res) => {
     };
 
     await GS.addContactRepliedRow(row);
+
+    telegramBot.sendMessage(SENDER_ID, `A contact ${name}, has replied to the campaign ${campaign} with a message ${message}.`);
     
     res.sendStatus(200);
 });

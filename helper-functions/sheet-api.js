@@ -5,9 +5,11 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 // spreadsheet key is the long id in the sheets URL
 const RESPONSES_SHEET_ID = process.env.RESPONSES_SHEET_ID;
 const MESSAGES_SHEET_ID = process.env.MESSAGES_SHEET_ID;
+const CONFIGURATION_SHEET_ID = process.env.CONFIGURATION_SHEET_ID;
 
 const responseDoc = new GoogleSpreadsheet(RESPONSES_SHEET_ID);
 const messageDoc = new GoogleSpreadsheet(MESSAGES_SHEET_ID);
+const configurationDoc = new GoogleSpreadsheet(CONFIGURATION_SHEET_ID);
 
 // Credentials for the service account
 const CREDENTIALS = JSON.parse(process.env.CREDENTIALS);
@@ -91,8 +93,82 @@ const addContactRepliedRow = async (row) => {
     }
 };
 
+// Get the configuration based on the commpany name
+const getConfiguration = async (company_name) => {
+
+    try {
+        // use service account creds
+        await configurationDoc.useServiceAccountAuth({
+            client_email: CREDENTIALS.client_email,
+            private_key: CREDENTIALS.private_key
+        });
+
+        await configurationDoc.loadInfo();
+
+        let sheet = configurationDoc.sheetsByIndex[0];
+
+        let rows = await sheet.getRows();
+
+        let configurationData = [];
+
+        for (let index = 0; index < rows.length; index++) {
+            const row = rows[index];
+            if (row.company_name === company_name) {
+                configurationData.push({
+                    company_name: row.company_name,
+                    sheet_id: row.sheet_id,
+                    sheet_number: row.sheet_number
+                });
+            }
+        };
+
+        if (configurationData.length == 0) {
+            return {
+                status: 0
+            };
+        } else {
+            return {
+                status: 1,
+                configurationData: configurationData[0]
+            };
+        }
+
+    } catch (error) {
+        console.log(`Error at getConfiguration --> ${error}`);
+        return {
+            status: 0
+        };
+    }
+};
+
+// Add new row from configuration data
+const addNewRow = async (configurationData, row) => {
+
+    try {
+        const sheet_id = configurationData.sheet_id;
+        const doc = new GoogleSpreadsheet(sheet_id);
+        // use service account creds
+        await doc.useServiceAccountAuth({
+            client_email: CREDENTIALS.client_email,
+            private_key: CREDENTIALS.private_key
+        });
+
+        await doc.loadInfo();
+
+        // Index of the sheet
+        let sheet = doc.sheetsByIndex[configurationData.sheet_number];
+
+        await sheet.addRow(row);
+
+    } catch (error) {
+        console.log(`Error at addNewRow --> ${error}`);
+    }
+};
+
 module.exports = {
     getSimpleResponse,
     addMessageSentRow,
-    addContactRepliedRow
+    addContactRepliedRow,
+    getConfiguration,
+    addNewRow
 };

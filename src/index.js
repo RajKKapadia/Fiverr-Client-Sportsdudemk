@@ -45,23 +45,28 @@ const TELEGRAMTOKEN = process.env.TELEGRAM_API_KEY;
 const telegramBot = new TelegramBot(TELEGRAMTOKEN, { polling: true });
 const SENDER_ID = process.env.SENDER_ID;
 
+// Contact Replied event from Expandi
 webApp.post('/contact-replied', async (req, res) => {
 
     let messenger = req.body.messenger;
     let placeholders = messenger.placeholders;
 
     console.log('Contact replied.');
+    console.log(`Hook name --> ${req.body.hook.name}`);
     console.log(`Message --> ${messenger.message}`);
     console.log(`Campaign --> ${messenger.campaign_instance}`);
     console.log(`Profile link --> ${placeholders.imported_profile_link}`);
-    console.log(`Name -- > ${placeholders.name}`);
+    console.log(`First name -- > ${placeholders.first_name}`);
+    console.log(`Last name -- > ${placeholders.last_name}`);
     console.log(`Phone --> ${placeholders.phone}`);
     console.log(`Email --> ${placeholders.email}`);
 
+    let profile = req.body.hook.name;
     let message = messenger.message;
     let campaign = messenger.campaign_instance;
     let profile_link = placeholders.imported_profile_link;
-    let name =  placeholders.name;
+    let first_name = placeholders.first_name;
+    let last_name = placeholders.last_name;
     let phone = placeholders.phone;
     let email = placeholders.email;
 
@@ -76,9 +81,11 @@ webApp.post('/contact-replied', async (req, res) => {
     let row = {
         timestamp: timestamp,
         message: message,
+        profile: profile,
         campaign: campaign,
         profile_link: profile_link,
-        name: name,
+        first_name: first_name,
+        last_name: last_name,
         phone: phone,
         email: email,
         intent_name: intent_name,
@@ -87,28 +94,33 @@ webApp.post('/contact-replied', async (req, res) => {
 
     await GS.addContactRepliedRow(row);
 
-    telegramBot.sendMessage(SENDER_ID, `A contact ${name}, has replied to the campaign ${campaign} on profile ${profile_link} has sent a message.`);
-    
+    telegramBot.sendMessage(SENDER_ID, `A contact ${first_name} ${last_name}, has replied to the campaign ${campaign} on profile ${profile} has sent a message.`);
+
     res.sendStatus(200);
 });
 
+// Message sent event from Expandi
 webApp.post('/message-sent', async (req, res) => {
 
     let messenger = req.body.messenger;
     let placeholders = messenger.placeholders;
 
     console.log('New message send.');
+    console.log(`Hook name --> ${req.body.hook.name}`);
     console.log(`Message --> ${messenger.message}`);
     console.log(`Campaign --> ${messenger.campaign_instance}`);
     console.log(`Profile link --> ${placeholders.imported_profile_link}`);
-    console.log(`Name -- > ${placeholders.name}`);
+    console.log(`First name -- > ${placeholders.first_name}`);
+    console.log(`Last name -- > ${placeholders.last_name}`);
     console.log(`Phone --> ${placeholders.phone}`);
     console.log(`Email --> ${placeholders.email}`);
 
+    let profile = req.body.hook.name;
     let message = messenger.message;
     let campaign = messenger.campaign_instance;
     let profile_link = placeholders.imported_profile_link;
-    let name =  placeholders.name;
+    let first_name = placeholders.first_name;
+    let last_name = placeholders.last_name;
     let phone = placeholders.phone;
     let email = placeholders.email;
 
@@ -118,15 +130,89 @@ webApp.post('/message-sent', async (req, res) => {
     let row = {
         timestamp: timestamp,
         message: message,
+        profile: profile,
         campaign: campaign,
         profile_link: profile_link,
-        name: name,
+        first_name: first_name,
+        last_name: last_name,
         phone: phone,
         email: email
     };
 
     await GS.addMessageSentRow(row);
-    
+
+    res.sendStatus(200);
+});
+
+// Contact Tagged event Expandi
+webApp.post('/contact-tagged', async (req, res) => {
+
+    // get the configuration
+    console.log(`Company name --> ${req.query.company_name}`);
+    let company_name = req.query.company_name;
+    let configurationData = await GS.getConfiguration(company_name);
+
+    if (configurationData.status == 1) {
+
+        let hook = req.body.hook;
+        let dateobj = new Date(hook.fired_datetime);
+        function pad(n) { return n < 10 ? "0" + n : n; }
+        var date = pad(dateobj.getDate()) + "/" + pad(dateobj.getMonth() + 1) + "/" + dateobj.getFullYear();
+        let profile = hook.name;
+
+        let contact = req.body.contact;
+        let type = contact.tags[0];
+        let company = contact.company_name;
+
+        let messenger = req.body.messenger;
+        let campaign = messenger.campaign_instance;
+        let last_received_message = messenger.last_received_message
+
+        let placeholders = messenger.placeholders;
+        let profile_link = placeholders.imported_profile_link;
+        let first_name = placeholders.first_name;
+        let last_name = placeholders.last_name;
+        let phone = placeholders.phone;
+        let email = placeholders.email;
+
+        console.log(`Profile --> ${profile}`);
+        console.log(`Date --> ${date}`);
+        console.log(`Type --> ${type}`);
+        console.log(`Company --> ${company}`);
+        console.log(`Campaign --> ${campaign}`);
+        console.log(`Last received message --> ${last_received_message}`);
+        console.log(`Profile link --> ${placeholders.imported_profile_link}`);
+        console.log(`First name -- > ${placeholders.first_name}`);
+        console.log(`Last name -- > ${placeholders.last_name}`);
+        console.log(`Phone --> ${placeholders.phone}`);
+        console.log(`Email --> ${placeholders.email}`);
+
+        let row = {
+            'Campaign': campaign,
+            'Profile': profile,
+            'First Name': first_name,
+            'Last Name': last_name,
+            'Phone': phone,
+            'Email': email,
+            'Company': company,
+            'Profile Link': profile_link,
+            'All Messages': last_received_message,
+            'Last Message': last_received_message,
+            'Sum': 1,
+            'Channel': 'LinkedIn',
+            'Type': type,
+            'Date': date,
+        }
+
+        if (type == 'Lead') {
+            row['Total Qualified Leads'] = 1;
+        } else {
+            row['Total Appts'] = 1;
+        }
+
+        await GS.addNewRow(configurationData.configurationData, row);
+    }
+
     res.sendStatus(200);
 });
 

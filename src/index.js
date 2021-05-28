@@ -74,6 +74,7 @@ webApp.post('/contact-replied', async (req, res) => {
 
     let intent_name = intentData.intent_name;
     let dialogflow_response = intentData.reply;
+    let confidence = intentData.confidence;
 
     let date = new Date();
     let timestamp = date.toLocaleString('en', { timeZone: 'UTC' })
@@ -89,7 +90,8 @@ webApp.post('/contact-replied', async (req, res) => {
         phone: phone,
         email: email,
         intent_name: intent_name,
-        dialogflow_response: dialogflow_response
+        dialogflow_response: dialogflow_response,
+        confidence: confidence
     };
 
     await GS.addContactRepliedRow(row);

@@ -40,7 +40,8 @@ const detectIntent = async (queryText, sessionId, languageCode) => {
         return {
             status: 200,
             reply: result.fulfillmentMessages[0].text.text[0],
-            intent_name: result.intent.displayName
+            intent_name: result.intent.displayName,
+            confidence: result.intentDetectionConfidence
         }
     } catch (error) {
         console.log(`Error at detectIntent --> ${error}`);
@@ -49,6 +50,14 @@ const detectIntent = async (queryText, sessionId, languageCode) => {
         };
     }
 };
+
+detectIntent('hello', 'abcd1234', 'en')
+    .then((res) => {
+        console.log(res);
+    })
+    .catch((err) => {
+        console.log(err);
+    });
 
 module.exports = {
     detectIntent

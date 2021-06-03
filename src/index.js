@@ -50,7 +50,7 @@ const SENDER_ID = process.env.SENDER_ID;
 const { Client } = require('discord.js');
 
 const DISCORD_API_KEY = process.env.DISCORD_API_KEY;
-const CHANNEL_ID = process.env.CHANNEL_ID;
+const CHANNEL_NAME = 'Name of the channel';
 
 const client = new Client();
 
@@ -113,9 +113,10 @@ webApp.post('/contact-replied', async (req, res) => {
     // Send message to discord channel
     client.login(DISCORD_API_KEY);
 
-    client.on('ready', () => {
+    client.on('ready', async () => {
         console.log(`Logged in as ${client.user.tag}!`);
-        client.channels.cache.get(CHANNEL_ID).send(botMessage);
+        const channel = client.channels.cache.find(channel => channel.name === CHANNEL_NAME);
+        channel.send(botMessage);
     });
 
     res.sendStatus(200);
@@ -138,7 +139,7 @@ webApp.post('/message-sent', async (req, res) => {
     console.log(`Email --> ${placeholders.email}`);
 
     let profile = req.body.hook.name;
-    let message = messenger.message;
+    let message = messenger.last_send_message;
     let campaign = messenger.campaign_instance;
     let profile_link = placeholders.imported_profile_link;
     let first_name = placeholders.first_name;

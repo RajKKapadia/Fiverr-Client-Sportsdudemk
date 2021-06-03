@@ -51,14 +51,6 @@ const detectIntent = async (queryText, sessionId, languageCode) => {
     }
 };
 
-detectIntent('hello', 'abcd1234', 'en')
-    .then((res) => {
-        console.log(res);
-    })
-    .catch((err) => {
-        console.log(err);
-    });
-
 module.exports = {
     detectIntent
 }

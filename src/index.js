@@ -40,10 +40,19 @@ webApp.post('/webhook', async (req, res) => {
     });
 });
 
+// Telegram part
 const TelegramBot = require('node-telegram-bot-api');
 const TELEGRAMTOKEN = process.env.TELEGRAM_API_KEY;
 const telegramBot = new TelegramBot(TELEGRAMTOKEN, { polling: true });
 const SENDER_ID = process.env.SENDER_ID;
+
+// Discord part
+const { Client } = require('discord.js');
+
+const DISCORD_API_KEY = process.env.DISCORD_API_KEY;
+const CHANNEL_ID = process.env.CHANNEL_ID;
+
+const client = new Client();
 
 // Contact Replied event from Expandi
 webApp.post('/contact-replied', async (req, res) => {
@@ -96,7 +105,18 @@ webApp.post('/contact-replied', async (req, res) => {
 
     await GS.addContactRepliedRow(row);
 
-    telegramBot.sendMessage(SENDER_ID, `A contact ${first_name} ${last_name}, has replied to the campaign ${campaign} on profile ${profile} has sent a message.`);
+    let botMessage = `A contact ${first_name} ${last_name}, has replied to the campaign ${campaign} on profile ${profile} has sent a message.`;
+
+    // Send message to telegram channel
+    telegramBot.sendMessage(SENDER_ID, botMessage);
+
+    // Send message to discord channel
+    client.login(DISCORD_API_KEY);
+
+    client.on('ready', () => {
+        console.log(`Logged in as ${client.user.tag}!`);
+        client.channels.cache.get(CHANNEL_ID).send(botMessage);
+    });
 
     res.sendStatus(200);
 });

@@ -50,9 +50,7 @@ const SENDER_ID = process.env.SENDER_ID;
 const { Client } = require('discord.js');
 
 const DISCORD_API_KEY = process.env.DISCORD_API_KEY;
-const CHANNEL_NAME = 'Name of the channel';
-
-const client = new Client();
+const CHANNEL_NAME = 'testingchannel';
 
 // Contact Replied event from Expandi
 webApp.post('/contact-replied', async (req, res) => {
@@ -79,14 +77,14 @@ webApp.post('/contact-replied', async (req, res) => {
     let phone = placeholders.phone;
     let email = placeholders.email;
 
-    let intentData = await DF.detectIntent('hello', 'abcdefgh12345678', 'en-US');
+    let intentData = await DF.detectIntent('hello', `${first_name.replace(' ', '')}_${phone.replace(' ', '')}`, 'en-US');
 
     let intent_name = intentData.intent_name;
     let dialogflow_response = intentData.reply;
     let confidence = intentData.confidence;
 
     let date = new Date();
-    let timestamp = date.toLocaleString('en', { timeZone: 'UTC' })
+    let timestamp = date.toLocaleString('en', { timeZone: 'America/Bogota' })
 
     let row = {
         timestamp: timestamp,
@@ -109,15 +107,19 @@ webApp.post('/contact-replied', async (req, res) => {
 
     // Send message to telegram channel
     telegramBot.sendMessage(SENDER_ID, botMessage);
+    console.log('Telegram message sent.')
 
-    // Send message to discord channel
-    client.login(DISCORD_API_KEY);
+    const client = new Client();
 
     client.on('ready', async () => {
         console.log(`Logged in as ${client.user.tag}!`);
-        const channel = client.channels.cache.find(channel => channel.name === CHANNEL_NAME);
+        let channel = client.channels.cache.find(channel => channel.name === CHANNEL_NAME);
         channel.send(botMessage);
+        console.log('Discord message sent.');
     });
+
+    // Login the bot
+    client.login(DISCORD_API_KEY);
 
     res.sendStatus(200);
 });
@@ -130,7 +132,7 @@ webApp.post('/message-sent', async (req, res) => {
 
     console.log('New message send.');
     console.log(`Hook name --> ${req.body.hook.name}`);
-    console.log(`Message --> ${messenger.message}`);
+    console.log(`Message --> ${messenger.last_sent_message}`);
     console.log(`Campaign --> ${messenger.campaign_instance}`);
     console.log(`Profile link --> ${placeholders.imported_profile_link}`);
     console.log(`First name -- > ${placeholders.first_name}`);
@@ -139,7 +141,7 @@ webApp.post('/message-sent', async (req, res) => {
     console.log(`Email --> ${placeholders.email}`);
 
     let profile = req.body.hook.name;
-    let message = messenger.last_send_message;
+    let message = messenger.last_sent_message;
     let campaign = messenger.campaign_instance;
     let profile_link = placeholders.imported_profile_link;
     let first_name = placeholders.first_name;
@@ -148,7 +150,8 @@ webApp.post('/message-sent', async (req, res) => {
     let email = placeholders.email;
 
     let date = new Date();
-    let timestamp = date.toLocaleString('en', { timeZone: 'UTC' })
+    let timestamp = date.toLocaleString('en', { timeZone: 'America/Bogota' })
+    console.log(`Date --> ${timestamp}`);
 
     let row = {
         timestamp: timestamp,

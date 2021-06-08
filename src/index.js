@@ -21,6 +21,7 @@ webApp.get('/', (req, res) => {
 
 const GS = require('../helper-functions/sheet-api');
 const DF = require('../helper-functions/dialogflow-api');
+const MAIL = require('../helper-functions/mail-api');
 
 // Webhook
 webApp.post('/webhook', async (req, res) => {
@@ -109,6 +110,7 @@ webApp.post('/contact-replied', async (req, res) => {
     telegramBot.sendMessage(SENDER_ID, botMessage);
     console.log('Telegram message sent.')
 
+    // Send message to Discord Channel
     const client = new Client();
 
     client.on('ready', async () => {
@@ -118,7 +120,6 @@ webApp.post('/contact-replied', async (req, res) => {
         console.log('Discord message sent.');
     });
 
-    // Login the bot
     client.login(DISCORD_API_KEY);
 
     res.sendStatus(200);
@@ -237,6 +238,40 @@ webApp.post('/contact-tagged', async (req, res) => {
         }
 
         await GS.addNewRow(configurationData.configurationData, row);
+    }
+
+    res.sendStatus(200);
+});
+
+webApp.post('/lead-transfer', async(req, res) => {
+
+    // get the configuration
+    console.log(`Company name --> ${req.query.company_name}`);
+    let company_name = req.query.company_name;
+    let configurationData = await GS.getConfiguration(company_name);
+
+    if (configurationData.status == 1) {
+
+        let messenger = req.body.messenger;
+
+        let placeholders = messenger.placeholders;
+        let first_name = placeholders.first_name;
+        let jobTitle = placeholders.job_title;
+        let userCompany = placeholders.company_name;
+        let email = placeholders.email;
+
+        // Send mail
+        let subject = `[Introduction] ${first_name} x ${configurationData.configurationData.clientRepName} - ${configurationData.configurationData.clientComapny}`
+        let mailText = `Hi ${first_name}!
+        
+        I'm excited to connect you to ${configurationData.configurationData.clientRepName}, ${configurationData.configurationData.clientRepTitle} at ${configurationData.configurationData.clientComapny}. The expert team at ${configurationData.configurationData.clientComapny} behind ${configurationData.configurationData.clientRepName} has ${configurationData.configurationData.authorityShort}: produced 1200+ podcast episodes and grown podcasts from 0 to 80,000 downloads per month and is looking forward to sharing more information with you.
+        
+        ${configurationData.configurationData.clientRepName}, ${first_name} is the ${jobTitle} at ${userCompany}. {Prospect Notes}. I will leave you two to continue the conversation further.
+        
+        Sincerely,`;
+
+        await MAIL.sendMail(mailText, email, subject);
+        console.log('Email sent successfully.');
     }
 
     res.sendStatus(200);

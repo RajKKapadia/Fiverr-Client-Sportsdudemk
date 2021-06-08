@@ -117,7 +117,11 @@ const getConfiguration = async (company_name) => {
                 configurationData.push({
                     company_name: row.company_name,
                     sheet_id: row.sheet_id,
-                    sheet_number: row.sheet_number
+                    sheet_number: row.sheet_number,
+                    clientRepName: row['Client Rep Name'],
+                    clientComapny: row['Client Company'],
+                    clientRepTitle: row['Client Rep Title'],
+                    authorityShort: row['Authority Short'],
                 });
             }
         };
